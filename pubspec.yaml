@@ -1,8 +1,7 @@
 name: autoform
-description: A new Flutter package project.
+description: A simple package to help you build forms.
 version: 0.0.1
-author:
-homepage:
+homepage: https://github.com/taimoorhassan-work/autoform
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
