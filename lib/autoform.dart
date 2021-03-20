@@ -2,6 +2,7 @@
 library autoform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Simple Form Validator
 typedef FormValidator = String? Function(dynamic? email);
@@ -45,11 +46,17 @@ class AutoFormSettings {
   }
 }
 
-enum AutoPropertyType { text, number, email, date }
+enum AutoPropertyType { text, multiselect, number, email, date, widget }
+
+class AutoCustomWidget extends AutoProperty {
+  final Widget widget;
+  AutoCustomWidget({required this.widget})
+      : super(type: AutoPropertyType.widget, field: '');
+}
 
 class AutoProperty {
-  /// the current field name (if this property is for First Name field maybe first_name )
-  String? field;
+  /// the current field name (if this property is for First Name field maybe first_name ) Provide a random field name for [AutoPropertyType.widgets]
+  String field;
 
   /// The title (if applicable) is displayed atop the field by default
   String? title;
@@ -57,13 +64,27 @@ class AutoProperty {
   /// The hint (if applicable) is displayed inside the field by default
   String? hint;
 
+  /// Custom widget. Applicapple only with `AutoPropertyType.custom`
+  Widget? widget;
+
+  /// Options for [AutoPropertyType.multiselect]
+  List<String>? options;
+
   /// Describes the type of the property
-  AutoPropertyType? type;
+  AutoPropertyType type;
 
   /// The validator to run upon submit
   String? Function(dynamic)? validator;
 
-  AutoProperty({this.field, this.title, this.type, this.validator, this.hint});
+  AutoProperty({
+    required this.field,
+    this.title,
+    required this.type,
+    this.validator,
+    this.widget,
+    this.options,
+    this.hint,
+  });
 
   Widget _build(
     Function(dynamic) onChange, {
@@ -72,36 +93,108 @@ class AutoProperty {
     if (type == AutoPropertyType.text) {
       return Padding(
         padding: AutoFormSettings.singleton.fieldMargin,
-        child: _buildText(onChange),
+        child: _buildText(onChange, initialvalue),
       );
+    } else if (type == AutoPropertyType.number) {
+      return _buildNumber(onChange, initialvalue);
+    } else if (type == AutoPropertyType.widget) {
+      return widget ?? Container();
+    } else if (type == AutoPropertyType.multiselect) {
+      return _buildMultiSelect(onChange, initialvalue);
     } else {
       return Container();
     }
   }
 
-  Widget _buildText(Function(dynamic) onChange) {
+  Widget _buildMultiSelect(Function(dynamic) onChange, String? initailValue) {
+    return _AutoDropDown(
+      onChange: onChange,
+      property: this,
+      initialValue: initailValue,
+    );
+  }
+
+  Widget _buildText(Function(dynamic) onChange, String? initailValue) {
     return TextFormField(
       validator: this.validator,
+      initialValue: initailValue,
       onChanged: onChange,
+      decoration: AutoFormSettings.singleton.textDecorationBuilder(this),
+    );
+  }
+
+  Widget _buildNumber(Function(dynamic) onChange, String? initialValue) {
+    return TextFormField(
+      validator: this.validator,
+      initialValue: initialValue,
+      onChanged: onChange,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       decoration: AutoFormSettings.singleton.textDecorationBuilder(this),
     );
   }
 }
 
+class _AutoDropDown extends StatelessWidget {
+  const _AutoDropDown({
+    Key? key,
+    required this.property,
+    required this.onChange,
+    this.initialValue,
+  }) : super(key: key);
+
+  final AutoProperty property;
+  final Function(dynamic) onChange;
+  final String? initialValue;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField(
+      // validator: this.validator,
+      onChanged: onChange,
+      // value: initailValue,
+      decoration: AutoFormSettings.singleton.textDecorationBuilder(property),
+      items: (property.options ?? [])
+          .map(
+            (e) => DropdownMenuItem(
+              value: e,
+              child: Text(e),
+              // onTap: () {
+              //   onChange(e);
+              // },
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class AutoResult {
+  Widget widget;
+  AutoForm form;
+
+  AutoResult({required this.form, required this.widget});
+}
+
+/// Main form builder used to create a new form.
 class AutoForm {
-  List<AutoProperty> _properties = [];
+  /// All fields inside this form.
+  List<AutoProperty> properties;
+
+  /// Values producted by this form.
   Map<String?, dynamic> values = {};
+
+  AutoForm({this.values = const {}, this.properties = const []});
 
   var _key = GlobalKey<FormState>();
 
   /// Adds a text field into the form
   AutoForm addText({
     String? hint,
-    String? field,
+    required String field,
     String? title,
     String? Function(dynamic)? validator,
   }) {
-    this._properties.add(
+    this.properties.add(
           AutoProperty(
               field: field,
               hint: hint,
@@ -112,13 +205,30 @@ class AutoForm {
     return this;
   }
 
+  AutoForm addNumber({
+    String? hint,
+    required String field,
+    String? title,
+    String? Function(dynamic)? validator,
+  }) {
+    this.properties.add(
+          AutoProperty(
+              field: field,
+              hint: hint,
+              title: title,
+              type: AutoPropertyType.number,
+              validator: validator),
+        );
+    return this;
+  }
+
   List<Widget> _buildChildern() {
     List<Widget> w = [];
-    for (var i = 0; i < _properties.length; i++) {
-      var p = _properties.elementAt(i);
+    for (var i = 0; i < properties.length; i++) {
+      var p = properties.elementAt(i);
       w.add(p._build((x) {
         values[p.field] = x;
-      }));
+      }, initialvalue: values[p.field]));
     }
     return w;
   }
@@ -131,8 +241,8 @@ class AutoForm {
   ///
   /// Get the form widget built from the properteis provided
   ///
-  Widget getForm() {
-    return Container(
+  AutoResult create() {
+    var widget = Container(
       child: Form(
         key: _key,
         child: Column(
@@ -143,5 +253,7 @@ class AutoForm {
         ),
       ),
     );
+
+    return AutoResult(form: this, widget: widget);
   }
 }
