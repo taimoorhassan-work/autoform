@@ -1,3 +1,9 @@
+## [0.0.4] - Added Option make Form from map
+
+* [Change] changed `AutoPropertyType.multiselect` to `AutoPropertyType.select`
+* [Feature] Added Option to create property from Map
+* [Feature] Added option to create form from map 
+
 ## [0.0.3] - Added Option to add Multiselect field in form
 
 * Added an option `AutoFormProperty.multiselect` 

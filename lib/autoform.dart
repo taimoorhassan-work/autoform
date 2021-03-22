@@ -14,6 +14,19 @@ class AutoValidators {
   /// Validates if a text is a properly formatted email.
   static FormValidator isEmail = _isEmail;
 
+  static Map<String, FormValidator> validators = {
+    'isEmail': _isEmail,
+    'isRequired': isRequired
+  };
+
+  static FormValidator isRequired = (x) {
+    if (x == null || x.toString().isEmpty) {
+      return 'Value Required';
+    } else {
+      return null;
+    }
+  };
+
   static String? _isEmail(dynamic? str, {String? errorMessage}) {
     if (str == null || str.isEmpty || !_email.hasMatch(str.toLowerCase())) {
       return 'Invalid Value';
@@ -46,7 +59,7 @@ class AutoFormSettings {
   }
 }
 
-enum AutoPropertyType { text, multiselect, number, email, date, widget }
+enum AutoPropertyType { text, select, number, date, widget }
 
 class AutoCustomWidget extends AutoProperty {
   final Widget widget;
@@ -64,10 +77,10 @@ class AutoProperty {
   /// The hint (if applicable) is displayed inside the field by default
   String? hint;
 
-  /// Custom widget. Applicapple only with `AutoPropertyType.custom`
+  /// Custom widget. Applicapple only with [AutoPropertyType.widget]
   Widget? widget;
 
-  /// Options for [AutoPropertyType.multiselect]
+  /// Options for [AutoPropertyType.select]
   List<String>? options;
 
   /// Describes the type of the property
@@ -75,6 +88,26 @@ class AutoProperty {
 
   /// The validator to run upon submit
   String? Function(dynamic)? validator;
+
+  factory AutoProperty.fromMap(Map<String, dynamic> map) {
+    String? f = map['field'];
+    print(map);
+    var t = AutoPropertyType.values.singleWhere((element) {
+      return element.toString() ==
+          ('AutoPropertyType.' + map['type'].toString());
+    });
+    if (f != null) {
+      return AutoProperty(
+          field: f,
+          type: t,
+          title: map['title'],
+          validator: AutoValidators.validators[map['validator']],
+          hint: map['hint'],
+          options: map['options'] as List<String>?);
+    } else {
+      throw FlutterError('Values Missing');
+    }
+  }
 
   AutoProperty({
     required this.field,
@@ -90,25 +123,30 @@ class AutoProperty {
     Function(dynamic) onChange, {
     dynamic initialvalue,
   }) {
-    if (type == AutoPropertyType.text) {
-      return Padding(
-        padding: AutoFormSettings.singleton.fieldMargin,
-        child: _buildText(onChange, initialvalue),
-      );
-    } else if (type == AutoPropertyType.number) {
-      return _buildNumber(onChange, initialvalue);
-    } else if (type == AutoPropertyType.widget) {
-      return widget ?? Container();
-    } else if (type == AutoPropertyType.multiselect) {
-      return _buildMultiSelect(onChange, initialvalue);
-    } else {
-      return Container();
+    switch (type) {
+      case AutoPropertyType.text:
+        return _buildText(onChange, initialvalue);
+      case AutoPropertyType.select:
+        return _buildMultiSelect(onChange, initialvalue);
+      case AutoPropertyType.number:
+        return _buildNumber(onChange, initialvalue);
+      case AutoPropertyType.date:
+        return _buildDate(onChange, initialvalue);
+      case AutoPropertyType.widget:
+        return widget ?? Container();
     }
+  }
+
+  Widget _buildDate(Function(dynamic) onChange, String? initialValue) {
+    return Material(
+      elevation: 0,
+    );
   }
 
   Widget _buildMultiSelect(Function(dynamic) onChange, String? initailValue) {
     return _AutoDropDown(
       onChange: onChange,
+      validator: this.validator,
       property: this,
       initialValue: initailValue,
     );
@@ -140,16 +178,18 @@ class _AutoDropDown extends StatelessWidget {
     required this.property,
     required this.onChange,
     this.initialValue,
+    this.validator,
   }) : super(key: key);
 
   final AutoProperty property;
   final Function(dynamic) onChange;
   final String? initialValue;
+  final FormValidator? validator;
 
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField(
-      // validator: this.validator,
+      validator: this.validator,
       onChanged: onChange,
       // value: initailValue,
       decoration: AutoFormSettings.singleton.textDecorationBuilder(property),
@@ -177,6 +217,47 @@ class AutoResult {
 
 /// Main form builder used to create a new form.
 class AutoForm {
+  ///
+  /// Create a form from Map.
+  ///
+  /// Takes a map structured as:
+  ///
+  /// ``` dart
+  /// {
+  ///   "properties" : [
+  ///   {
+  ///      "field" : "name",
+  ///      "type" : "text",
+  ///      "hint" : "Enter your full name here"
+  ///   },
+  ///   {
+  ///     "field" : "age",
+  ///      "type" : "number",
+  ///      "hint" : "Type your age here"
+  ///   },
+  ///   {
+  ///     "field" : "gender",
+  ///      "type" : "select",
+  ///      "hint" : "Provide your gender. If you're comfortable with that of course",
+  ///      "options" : ["Male" , "Female" , "rather not say"]
+  ///   }
+  ///   ]
+  /// }
+  /// ```
+  factory AutoForm.fromMap(Map<String, dynamic> map) {
+    if (map['properties'] != null) {
+      try {
+        var l = map['properties'] as List;
+        return AutoForm(
+            values: Map<String, dynamic>.from({}),
+            properties: l.map((e) => AutoProperty.fromMap(e)).toList());
+      } catch (e) {
+        print(e);
+      }
+    } else {}
+    throw FlutterError('Invalid Values');
+  }
+
   /// All fields inside this form.
   List<AutoProperty> properties;
 
@@ -226,9 +307,12 @@ class AutoForm {
     List<Widget> w = [];
     for (var i = 0; i < properties.length; i++) {
       var p = properties.elementAt(i);
-      w.add(p._build((x) {
-        values[p.field] = x;
-      }, initialvalue: values[p.field]));
+      w.add(Padding(
+        padding: AutoFormSettings().fieldMargin,
+        child: p._build((x) {
+          values[p.field] = x;
+        }, initialvalue: values[p.field]),
+      ));
     }
     return w;
   }
