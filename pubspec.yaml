@@ -1,6 +1,6 @@
 name: autoform
 description: A simple package to help you build forms. A form builder with code controlled validation.
-version: 0.0.3
+version: 0.0.4
 homepage: https://github.com/taimoorhassan-work/autoform
 
 environment:

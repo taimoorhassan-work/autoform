@@ -71,3 +71,34 @@ class _HomeState extends State<Home> {
 
 
 ```
+
+
+
+### Create a form from map
+
+
+``` dart
+
+  var personForm = AutoForm.fromMap({
+      'properties': [
+        {
+          'title': 'Full Name',
+          'field': 'fullName',
+          'validator': 'isRequired',
+          'type': 'text',
+        },
+        {
+          'title': 'Age',
+          'field': 'age',
+          'type': 'number',
+        },
+        {
+          'title': 'Gender',
+          'field': 'gender',
+          'type': 'select',
+          "options": ["Male", "Female", "rather not say"]
+        },
+      ]
+    }).create();
+
+```
