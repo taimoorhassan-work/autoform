@@ -60,5 +60,5 @@ class AutoList {
     return singleton;
   }
 
-  AutoList._internal() {}
+  AutoList._internal();
 }

@@ -2,7 +2,7 @@ library autoform;
 
 
 /// Simple Form Validator
-typedef FormValidator = String? Function(dynamic? email);
+typedef FormValidator = String? Function(dynamic email);
 
 class AutoValidators {
   static RegExp _email = new RegExp(
@@ -21,7 +21,7 @@ class AutoValidators {
     }
   };
 
-  static String? _isEmail(dynamic? str, {String? errorMessage}) {
+  static String? _isEmail(dynamic str, {String? errorMessage}) {
     if (str == null || str.isEmpty || !_email.hasMatch(str.toLowerCase())) {
       return 'Invalid Value';
     } else {

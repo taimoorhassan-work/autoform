@@ -140,36 +140,6 @@ class AutoProperty {
             )),
       );
 
-      return Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: OutlineInputBorder().borderSide.color.withOpacity(0.4)),
-          borderRadius: OutlineInputBorder().borderRadius,
-        ),
-        child: InkWell(
-          onTap: show,
-          child: Stack(
-            children: [
-              Opacity(
-                child: TextField(
-                  enabled: false,
-                ),
-                opacity: 0,
-              ),
-              Row(
-                children: [
-                  Expanded(
-                      child: TextField(
-                    enabled: false,
-                    controller: con,
-                  )),
-                  IconButton(icon: Icon(Icons.calendar_today_outlined), onPressed: show)
-                ],
-              ),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(10),
-        ),
-      );
     });
   }
 

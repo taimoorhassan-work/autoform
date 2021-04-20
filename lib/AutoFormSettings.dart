@@ -2,7 +2,6 @@ library  autoform;
 
 import 'package:flutter/material.dart';
 
-import 'Form.dart';
 import 'AutoProperty.dart';
 
 

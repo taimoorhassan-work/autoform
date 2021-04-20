@@ -1,3 +1,8 @@
+## [0.0.5] - Added A Ui to view properties
+
+* Added ui to edit properties at runtime
+* Added a date picker
+
 ## [0.0.4] - Added Option make Form from map
 
 * [Change] changed `AutoPropertyType.multiselect` to `AutoPropertyType.select`
