@@ -55,9 +55,9 @@ class _HomeState extends State<Home> {
               onPressed: () {
                 var isValid = form.form.validate();
                 if (isValid) {
-                  print("Form validated");
+                  pprint("Form validated");
                 } else {
-                  print("Errors");
+                  pprint("Errors");
                 }
               },
               child: Text("Validate"),
